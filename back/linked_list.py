@@ -1,15 +1,60 @@
+from ctypes import Union
+
+
 class LinkedListItem:
-    def __init__(self, item):
-        self.item = item
-        self.prev = None
-        self.next = None
+    def __init__(self, data=None):
+        self.__next = self.__prev = None
+        self.data = data
+
+    @property
+    def next(self):
+        return self.__next
+
+    @next.setter
+    def next(self, value):
+        self.__next = value
+        value.__prev = self
+
+    @property
+    def prev(self):
+        return self.__prev
+
+    @prev.setter
+    def prev(self, value):
+        self.__prev = value
+        value.__next = self
 
 
 class LinkedList:
-    def __init__(self):
-        self.head = None
-        self.tail = None
-        self.size = 0
+    def __init__(self, head: Union[LinkedListItem, None] = None) -> None:
+        self.__head = head
+
+        if head is None:
+            self.__tail = None
+            self.size = 0
+        else:
+            self.size = 1
+            ptr = head
+            while ptr.next_item is not None and ptr.next_item != self.head:
+                ptr = ptr.next_item
+                self.size += 1
+            self.tail = ptr
+
+    @property
+    def head(self) -> Union[LinkedListItem, None]:
+        return self.__head
+
+    @property
+    def tail(self) -> Union[LinkedListItem, None]:
+        return self.__tail
+
+    @tail.setter
+    def tail(self, value: Union[LinkedListItem, None]) -> None:
+        self.__tail = value
+
+    @head.setter
+    def head(self, value: Union[LinkedListItem, None]) -> None:
+        self.__head = value
 
     def append_to_emptylist(self, item):
         new_node = LinkedListItem(item)
@@ -91,25 +136,44 @@ class LinkedList:
         node.next.prev = node.prev
         self.size -= 1
 
-    def swap(self, item1, item2):
-        if item1 == self.head:
-            self.head = item2
-        elif item2 == self.head:
-            self.head = item1
-        if item1 == self.tail:
-            self.tail = item2
-        elif item2 == self.tail:
-            self.tail = item1
+    def swap(self, first_item: LinkedListItem, second_item: LinkedListItem) -> None:
+        """
+        Метод обмена двух любых нод списка между собой
+        :param first_item: первая нода
+        :param second_item: вторая нода
+        """
 
-        item2.prev = item1.prev
-        item1.next = item2.next
-        item2.next = item1
-        item1.prev = item2
-        item1.next.prev = item1
-        item2.prev.next = item2
+        if first_item == self.head:
+            self.head = second_item
+        elif second_item == self.head:
+            self.head = first_item
+        if first_item == self.tail:
+            self.tail = second_item
+        elif second_item == self.tail:
+            self.tail = first_item
+
+        temp = first_item.next
+        first_item.next = second_item.next
+        second_item.next = temp
+
+        if first_item.next is not None:
+            first_item.next.prev = first_item
+        if second_item.next is not None:
+            second_item.next.prev = second_item
+
+        temp = first_item.prev
+        first_item.prev = second_item.prev
+        second_item.prev = temp
+
+        if first_item.prev is not None:
+            first_item.prev.next = first_item
+        if second_item.prev is not None:
+            second_item.prev.next = second_item
 
     def __len__(self) -> int:
         return self.size
+
+    def __iter__(self):
 
     def __contains__(self, item: object) -> bool:
         node = self.head
