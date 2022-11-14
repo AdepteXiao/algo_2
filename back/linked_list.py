@@ -1,10 +1,11 @@
-from ctypes import Union
+from typing import Union, Iterator, Generator
 
 
 class LinkedListItem:
-    def __init__(self, data=None):
-        self.__next = self.__prev = None
-        self.data = data
+    def __init__(self, item = None):
+        self.__next = None
+        self.__prev = None
+        self.item = item
 
     @property
     def next(self):
@@ -173,15 +174,38 @@ class LinkedList:
     def __len__(self) -> int:
         return self.size
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator:
+        pointer = self.head
+        for i in range(self.size):
+            yield pointer
+            pointer = pointer.next
 
     def __contains__(self, item: object) -> bool:
         node = self.head
         while node is not self.tail:
             if node.item == item:
                 return True
+            node = node.next
         if self.tail.item == item:
             return True
         return False
 
+    def __reversed__(self) -> Generator:
+        node = self.tail
+        for i in range(self.size):
+            yield node
+            node = node.prev
+
+    def __getitem__(self, index: int) -> object:
+        if index >= self.size or abs(index) > self.size:
+            raise IndexError("index out of range")
+        if index >= 0:
+            node = self.head
+            for i in range(index):
+                node = node.next
+        else:
+            node = self.tail
+            for i in range(-1, index, -1):
+                node = node.prev
+        return node.item
 
