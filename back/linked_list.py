@@ -2,28 +2,36 @@ from typing import Union, Iterator, Generator
 
 
 class LinkedListItem:
-    def __init__(self, item = None):
+    def __init__(self, item=None):
         self.__next = None
         self.__prev = None
-        self.item = item
+        self.data = item
 
     @property
-    def next(self):
+    def next_item(self):
         return self.__next
 
-    @next.setter
-    def next(self, value):
+    @next_item.setter
+    def next_item(self, value):
         self.__next = value
         value.__prev = self
 
     @property
-    def prev(self):
+    def previous_item(self):
         return self.__prev
 
-    @prev.setter
-    def prev(self, value):
+    @previous_item.setter
+    def previous_item(self, value):
         self.__prev = value
         value.__next = self
+
+    def __str__(self):
+        return str(self.data)
+
+    def __repr__(self):
+        return f"   prev: {self.previous_item}\n" \
+               f"   val: {self.data}\n" \
+               f"   next: {self.next_item}"
 
 
 class LinkedList:
@@ -57,21 +65,21 @@ class LinkedList:
     def head(self, value: Union[LinkedListItem, None]) -> None:
         self.__head = value
 
-    def append_to_emptylist(self, item):
+    def append_to_empty_list(self, item):
         new_node = LinkedListItem(item)
         self.head = new_node
         self.tail = new_node
-        new_node.prev = self.head
-        new_node.next = self.tail
+        new_node.previous_item = self.head
+        new_node.next_item = self.tail
         self.size += 1
 
     def append_left(self, item):
         if self.head is None:
-            self.append_to_emptylist(item)
+            self.append_to_empty_list(item)
             return
         new_node = LinkedListItem(item)
-        new_node.next = self.head
-        self.head.prev = new_node
+        new_node.next_item = self.head
+        self.head.previous_item = new_node
         self.head = new_node
         self.size += 1
 
@@ -80,33 +88,33 @@ class LinkedList:
 
     def append(self, item):
         if self.head is None:
-            self.append_to_emptylist(item)
+            self.append_to_empty_list(item)
             return
         node = self.tail
         new_node = LinkedListItem(item)
-        node.next = new_node
-        new_node.prev = node
+        node.next_item = new_node
+        new_node.previous_item = node
         self.tail = new_node
         self.size += 1
 
-    def insert_after_item(self, previous, item):
+    def insert(self, previous, item):
         if self.head is None:
             print("List is empty")
             return
         else:
             node = self.head
             while node is not self.tail:
-                if node.item == previous:
+                if node.data == previous:
                     break
-                node = node.next
+                node = node.next_item
             if node is self.tail:
-                print("item not in the list")
+                print("data not in the list")
             else:
                 new_node = LinkedListItem(item)
-                node.next.prev = new_node
-                new_node.prev = node
-                new_node.next = node.next
-                node.next = new_node
+                node.next_item.previous_item = new_node
+                new_node.previous_item = node
+                new_node.next_item = node.next_item
+                node.next_item = new_node
                 self.size += 1
 
     def remove(self, item):
@@ -114,27 +122,27 @@ class LinkedList:
             print("The list has no element to delete")
             return
         if self.head is self.tail:
-            if self.head.item == item:
+            if self.head.data == item:
                 self.head = None
             else:
                 print("Item not found")
             return
 
-        if self.tail.item == item:
-            self.tail = self.tail.prev
+        if self.tail.data == item:
+            self.tail = self.tail.previous_item
             return
 
-        if self.head.item == item:
-            self.head = self.head.next
+        if self.head.data == item:
+            self.head = self.head.next_item
             return
 
         node = self.head
-        while node.next is not self.tail:
-            if node.item == item:
+        while node.next_item is not self.tail:
+            if node.data == item:
                 break
-            node = node.next
-        node.prev.next = node.next
-        node.next.prev = node.prev
+            node = node.next_item
+        node.previous_item.next_item = node.next_item
+        node.next_item.previous_item = node.previous_item
         self.size -= 1
 
     def swap(self, first_item: LinkedListItem, second_item: LinkedListItem) -> None:
@@ -153,23 +161,23 @@ class LinkedList:
         elif second_item == self.tail:
             self.tail = first_item
 
-        temp = first_item.next
-        first_item.next = second_item.next
-        second_item.next = temp
+        temp = first_item.next_item
+        first_item.next_item = second_item.next_item
+        second_item.next_item = temp
 
-        if first_item.next is not None:
-            first_item.next.prev = first_item
-        if second_item.next is not None:
-            second_item.next.prev = second_item
+        if first_item.next_item is not None:
+            first_item.next_item.previous_item = first_item
+        if second_item.next_item is not None:
+            second_item.next_item.previous_item = second_item
 
-        temp = first_item.prev
-        first_item.prev = second_item.prev
-        second_item.prev = temp
+        temp = first_item.previous_item
+        first_item.previous_item = second_item.previous_item
+        second_item.previous_item = temp
 
-        if first_item.prev is not None:
-            first_item.prev.next = first_item
-        if second_item.prev is not None:
-            second_item.prev.next = second_item
+        if first_item.previous_item is not None:
+            first_item.previous_item.next_item = first_item
+        if second_item.previous_item is not None:
+            second_item.previous_item.next_item = second_item
 
     def __len__(self) -> int:
         return self.size
@@ -178,15 +186,15 @@ class LinkedList:
         pointer = self.head
         for i in range(self.size):
             yield pointer
-            pointer = pointer.next
+            pointer = pointer.next_item
 
     def __contains__(self, item: object) -> bool:
         node = self.head
         while node is not self.tail:
-            if node.item == item:
+            if node.data == item:
                 return True
-            node = node.next
-        if self.tail.item == item:
+            node = node.next_item
+        if self.tail.data == item:
             return True
         return False
 
@@ -194,7 +202,7 @@ class LinkedList:
         node = self.tail
         for i in range(self.size):
             yield node
-            node = node.prev
+            node = node.previous_item
 
     def __getitem__(self, index: int) -> object:
         if index >= self.size or abs(index) > self.size:
@@ -202,10 +210,13 @@ class LinkedList:
         if index >= 0:
             node = self.head
             for i in range(index):
-                node = node.next
+                node = node.next_item
         else:
             node = self.tail
             for i in range(-1, index, -1):
-                node = node.prev
-        return node.item
+                node = node.previous_item
+        return node.data
+
+    def __str__(self):
+        return f"{self.__class__.__name__}([{', '.join([str(i) for i in self])}])"
 

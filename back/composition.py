@@ -1,0 +1,23 @@
+from tinytag import TinyTag
+
+
+class Composition:
+    def __init__(self, path):
+        self.tag = TinyTag.get(path, image=True)
+
+    @property
+    def duration(self):
+        return self.tag.duration
+
+    @property
+    def path(self):
+        return self.path
+
+    @property
+    def name(self):
+        return self.tag.title
+
+    @property
+    def image(self):
+        return self.tag.get_image()
+
