@@ -145,6 +145,12 @@ class LinkedList:
         node.next_item.previous_item = node.previous_item
         self.size -= 1
 
+    def find_node(self, data: object) -> LinkedListItem:
+        for node in self:
+            if node.data == data:
+                return node
+        raise ValueError("data not in list")
+
     def swap(self, first_item: LinkedListItem, second_item: LinkedListItem) -> None:
         """
         Метод обмена двух любых нод списка между собой
