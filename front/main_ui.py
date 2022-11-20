@@ -29,6 +29,7 @@ class MainUI(QMainWindow, Ui_MainWindow):
         super().__init__()
         self.setupUi(self)
         self.relator = Relator()
+        self.playLine = PlayLineGroupBox(make_list_of_all())
         self.all_playlists = AllPlaylistsGroupbox(self.relator)
         self.cur_playlist = CurPlaylistGroupbox(make_list_of_all())
         self.cur_playlist.updated.connect(self.update_handler)
@@ -36,6 +37,8 @@ class MainUI(QMainWindow, Ui_MainWindow):
         self.allPlaylistsGroupBox.hide()
         self.playlistsLayout.addWidget(self.cur_playlist)
         self.curPlaylistGroupBox.hide()
+        self.verticalLayout.addWidget(self.playLine)
+        self.playLineGroupBox.hide()
 
     def update_handler(self):
         print(f"{self.sender().name} обновился")
@@ -89,9 +92,10 @@ class TrackGroupbox(QGroupBox):
         self.composition = composition
         self.layout.addWidget(self.pic)
         self.layout.addWidget(self.meta)
-        self.layout.addItem(QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum))
+        spacerItem = QtWidgets.QSpacerItem(40, 0, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        self.layout.addItem(spacerItem)
         self.layout.addWidget(self.meta_dur)
-        self.layout.addItem(QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum))
+
 
     def mousePressEvent(self, event) -> None:
         print(f"{self.name} хочет играть")
@@ -120,6 +124,11 @@ class CurPlaylistGroupbox(QGroupBox):
             self.track_boxes.append(new_track)
             self.scrollAreaWidgetLayout.addWidget(new_track)
 
+        if self.track_boxes:
+            self.cur_track = self.track_boxes[0]
+        else:
+            self.cur_track = None
+
         self.layout.addWidget(QLabel("Пип"))
         self.layout.addWidget(self.scrollArea)
 
@@ -135,6 +144,48 @@ class CurPlaylistGroupbox(QGroupBox):
         print(f"Плейлист {self.playlist.name} понял что {self.sender().name} хочет играть")
         # self.playlist.current_track = self.sender().composition
         self.updated.emit()
+
+
+class PlayLineGroupBox(QGroupBox):
+    def __init__(self, playlist: Playlist):
+        super().__init__()
+        self.cur_playlist = playlist
+        self.cur_track = self.cur_playlist.current_track
+        self.setTitle(playlist.name)
+
+        self.layout = QVBoxLayout(self)
+
+        self.metaLayout = QHBoxLayout(self)
+        self.pic = QLabel()
+        self.pic.setPixmap(make_pixmap(self.cur_track.image, 32, 32))
+        self.name = QLabel(self.cur_track.name)
+        self.metaLayout.addWidget(self.pic)
+        self.metaLayout.addWidget(self.name)
+        spacerItem = QtWidgets.QSpacerItem(1000, 0, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        self.metaLayout.addItem(spacerItem)
+
+        self.trackProgressLayout = QHBoxLayout(self)
+        self.cur_dur = QLabel('00:00')
+        self.bar = QSlider()
+        self.bar.setOrientation(Qt.Horizontal)
+        self.dur = QLabel(self.cur_track.dur())
+        self.trackProgressLayout.addWidget(self.cur_dur)
+        self.trackProgressLayout.addWidget(self.bar)
+        self.trackProgressLayout.addWidget(self.dur)
+
+        self.controlsLayout = QHBoxLayout(self)
+        self.prev = QPushButton("<-")
+        self.pause = QPushButton("||")
+        self.play = QPushButton("|>")
+        self.next = QPushButton("->")
+        self.controlsLayout.addWidget(self.prev)
+        self.controlsLayout.addWidget(self.pause)
+        self.controlsLayout.addWidget(self.play)
+        self.controlsLayout.addWidget(self.next)
+
+        self.layout.addLayout(self.metaLayout)
+        self.layout.addLayout(self.trackProgressLayout)
+        self.layout.addLayout(self.controlsLayout)
 
 
 if __name__ == '__main__':

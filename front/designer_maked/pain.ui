@@ -18,13 +18,25 @@
     <item>
      <layout class="QHBoxLayout" name="playlistsLayout">
       <item>
-       <widget class="QGroupBox" name="allPlaylistsGgroupBox">
+       <widget class="QGroupBox" name="allPlaylistsGroupBox">
+        <property name="minimumSize">
+         <size>
+          <width>300</width>
+          <height>0</height>
+         </size>
+        </property>
         <property name="title">
          <string>Плейлисты</string>
         </property>
         <layout class="QVBoxLayout" name="verticalLayout_2">
          <item>
           <widget class="QScrollArea" name="allPlaylistsScrollArea">
+           <property name="minimumSize">
+            <size>
+             <width>250</width>
+             <height>0</height>
+            </size>
+           </property>
            <property name="widgetResizable">
             <bool>true</bool>
            </property>
@@ -49,6 +61,12 @@
              <layout class="QHBoxLayout" name="playlistHorizontalLayout">
               <item>
                <widget class="QLabel" name="playlistLabel">
+                <property name="maximumSize">
+                 <size>
+                  <width>16777215</width>
+                  <height>50</height>
+                 </size>
+                </property>
                 <property name="text">
                  <string>мета плейлиста</string>
                 </property>
@@ -77,6 +95,12 @@
          </item>
          <item>
           <widget class="QScrollArea" name="curPlaylistScrollArea">
+           <property name="minimumSize">
+            <size>
+             <width>300</width>
+             <height>0</height>
+            </size>
+           </property>
            <property name="widgetResizable">
             <bool>true</bool>
            </property>
@@ -101,10 +125,35 @@
              <layout class="QHBoxLayout" name="trackHorizontalLayout">
               <item>
                <widget class="QLabel" name="trackLabel">
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>16777215</width>
+                  <height>50</height>
+                 </size>
+                </property>
                 <property name="text">
                  <string>мета трека</string>
                 </property>
                </widget>
+              </item>
+              <item>
+               <spacer name="horizontalSpacer">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
               </item>
               <item>
                <widget class="QLabel" name="durationLabel">
