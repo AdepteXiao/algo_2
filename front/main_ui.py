@@ -15,19 +15,17 @@ class MainUI(QMainWindow, Ui_MainWindow):
         self.setupUi(self)
 
 
-class TrackGroupBox(QGroupBox):
+class TrackGroupbox(QGroupBox):
     def __init__(self, composition: Composition):
         super().__init__()
+        self.composition = composition
 
 
 class CurPlaylistGroupbox(QGroupBox):
     def __init__(self, playlist: Playlist):
         super().__init__()
-        self.curPlaylistScrollAreaWidget = QtWidgets.QWidget()
         self.playlist = playlist
-
-        for tracks in playlist:
-            track = TrackGroupBox(tracks.data)
+        self.track = TrackGroupbox
 
 
 if __name__ == '__main__':
