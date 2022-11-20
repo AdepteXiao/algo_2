@@ -5,7 +5,7 @@ from PyQt5.QtCore import Qt, QRect, pyqtSignal
 from PyQt5.QtGui import QPixmap
 
 from back.composition import Composition
-from back.database_interaction import Interaction
+from back.database_interaction import Relator
 from back.playlist import Playlist, PlaylistItem, make_list_of_all
 from front.designer_maked.des_ui import Ui_MainWindow
 
@@ -37,19 +37,21 @@ class MainUI(QMainWindow, Ui_MainWindow):
         print(f"{self.sender().name} обновился")
 
 
-class AllPlaylists(QGroupBox):
-    def __init__(self, interaction: Interaction):
+class AllPlaylistsGroupbox(QGroupBox):
+    def __init__(self, relator: Relator):
         super().__init__()
         self.scrollArea = QScrollArea()
         self.scrollAreaWidget = QWidget()
         self.scrollAreaWidgetLayout = QVBoxLayout(self.scrollAreaWidget)
         self.scrollArea.setWidget(self.scrollAreaWidget)
         self.playlist_boxes = []
-        for playlist in interaction.load():
-            new_playlist = TrackGroupbox(playlist.data, self)
-            # new_playlist.want_play.connect(self.play_slot)
+        for pllist in relator.load_playlists():
+            new_playlist = PlaylistGroupbox(pllist, self)
             self.playlist_boxes.append(new_playlist)
             self.scrollAreaWidgetLayout.addWidget(new_playlist)
+        self.layout.addWidget(self.scrollArea)
+        self.scrollArea.setWidgetResizable(True)
+        self.scrollAreaWidget.setGeometry(QRect(0, 0, 350, 344))
 
 
 class PlaylistGroupbox(QGroupBox):

@@ -3,10 +3,10 @@ from back.playlist import Playlist, make_list_of_all, create_node_sequence
 from back.composition import get_comp
 
 
-class Interaction:
+class Relator:
 
     def __init__(self) -> None:
-        self.json_file = r"C:\Education\algo2\tracks\songs"
+        self.json_file = r"C:\Education\algo2\tracks\main_playlist.json"
         with open(self.json_file, 'r', encoding="utf-8") as file:
             tmp = json.load(file)
             tmp[0] = make_list_of_all().get_dict()
@@ -32,3 +32,9 @@ class Interaction:
                                 head=create_node_sequence(
                                     get_comp(playlist_data['tracks']))))
         return res
+
+
+if __name__ == '__main__':
+    rel = Relator()
+    for playlist in rel.load_playlists():
+        print(playlist)
