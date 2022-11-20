@@ -28,8 +28,12 @@ class MainUI(QMainWindow, Ui_MainWindow):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
+        self.relator = Relator()
+        self.all_playlists = AllPlaylistsGroupbox(self.relator)
         self.cur_playlist = CurPlaylistGroupbox(make_list_of_all())
         self.cur_playlist.updated.connect(self.update_handler)
+        self.playlistsLayout.addWidget(self.all_playlists)
+        self.allPlaylistsGroupBox.hide()
         self.playlistsLayout.addWidget(self.cur_playlist)
         self.curPlaylistGroupBox.hide()
 
@@ -40,13 +44,15 @@ class MainUI(QMainWindow, Ui_MainWindow):
 class AllPlaylistsGroupbox(QGroupBox):
     def __init__(self, relator: Relator):
         super().__init__()
+        self.setTitle('Плейлисты')
+        self.layout = QVBoxLayout(self)
         self.scrollArea = QScrollArea()
         self.scrollAreaWidget = QWidget()
         self.scrollAreaWidgetLayout = QVBoxLayout(self.scrollAreaWidget)
         self.scrollArea.setWidget(self.scrollAreaWidget)
         self.playlist_boxes = []
-        for pllist in relator.load_playlists():
-            new_playlist = PlaylistGroupbox(pllist, self)
+        for playlist in relator.load_playlists():
+            new_playlist = PlaylistGroupbox(playlist, self)
             self.playlist_boxes.append(new_playlist)
             self.scrollAreaWidgetLayout.addWidget(new_playlist)
         self.layout.addWidget(self.scrollArea)
@@ -62,8 +68,9 @@ class PlaylistGroupbox(QGroupBox):
         self.name = playlist.name
         self.duration = playlist.duration
         self.cur_track = playlist.current_track
-        self.meta = playlist.meta()
+        self.meta = QLabel(playlist.meta())
         self.layout.addWidget(self.meta)
+        self.layout.addItem(QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum))
 
 
 class TrackGroupbox(QGroupBox):
