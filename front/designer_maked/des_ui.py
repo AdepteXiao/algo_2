@@ -81,8 +81,6 @@ class Ui_MainWindow(object):
         self.playlistsLayout.addWidget(self.curPlaylistGroupBox)
         self.verticalLayout.addLayout(self.playlistsLayout)
         self.playLineGroupBox = QtWidgets.QGroupBox(self.centralwidget)
-        self.playLineGroupBox.setMinimumSize(QtCore.QSize(0, 110))
-        self.playLineGroupBox.setMaximumSize(QtCore.QSize(16777215, 110))
         self.playLineGroupBox.setObjectName("playLineGroupBox")
         self.verticalLayout_3 = QtWidgets.QVBoxLayout(self.playLineGroupBox)
         self.verticalLayout_3.setObjectName("verticalLayout_3")

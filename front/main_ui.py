@@ -1,7 +1,7 @@
 from sys import argv, exit
 
 from PyQt5 import QtWidgets, QtGui
-from PyQt5.QtCore import Qt, QRect, pyqtSignal
+from PyQt5.QtCore import Qt, QRect, pyqtSignal, QSize
 from PyQt5.QtGui import QPixmap
 
 from back.composition import Composition
@@ -56,14 +56,20 @@ class AllPlaylistsGroupbox(QGroupBox):
         self.playlist_boxes = []
         for playlist in relator.load_playlists():
             new_playlist = PlaylistGroupbox(playlist, self)
+            # new_playlist.want_to_be_cur.connect(self.)
             self.playlist_boxes.append(new_playlist)
             self.scrollAreaWidgetLayout.addWidget(new_playlist)
+        spacerItem = QtWidgets.QSpacerItem(0, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        self.scrollAreaWidgetLayout.addItem(spacerItem)
         self.layout.addWidget(self.scrollArea)
         self.scrollArea.setWidgetResizable(True)
         self.scrollAreaWidget.setGeometry(QRect(0, 0, 350, 344))
+        self.scrollArea.setMinimumSize(QSize(300, 0))
 
 
 class PlaylistGroupbox(QGroupBox):
+    want_to_be_cur = pyqtSignal()
+
     def __init__(self, playlist: Playlist, parent=None):
         super().__init__(parent)
         self.layout = QVBoxLayout(self)
@@ -75,12 +81,22 @@ class PlaylistGroupbox(QGroupBox):
         self.layout.addWidget(self.meta)
         self.layout.addItem(QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum))
 
+    def mousePressEvent(self, event) -> None:
+        print(f"{self.name} хочет стать настоящим")
+        self.want_to_be_cur.emit()
+
 
 class TrackGroupbox(QGroupBox):
     want_play = pyqtSignal()
 
     def __init__(self, composition: Composition, parent=None):
         super().__init__(parent)
+
+        self.upDownLayout = QHBoxLayout()
+        self.up = QPushButton("↑")
+        self.down = QPushButton("↓")
+        self.up.setMaximumSize(QSize(15, 30))
+        self.down.setMaximumSize(QSize(15, 30))
 
         self.layout = QHBoxLayout(self)
         self.pic = QLabel()
@@ -90,12 +106,14 @@ class TrackGroupbox(QGroupBox):
         self.meta = QLabel(repr(composition))
         self.meta_dur = QLabel(composition.dur())
         self.composition = composition
+        self.layout.addLayout(self.upDownLayout)
+        self.upDownLayout.addWidget(self.up)
+        self.upDownLayout.addWidget(self.down)
         self.layout.addWidget(self.pic)
         self.layout.addWidget(self.meta)
         spacerItem = QtWidgets.QSpacerItem(40, 0, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.layout.addItem(spacerItem)
         self.layout.addWidget(self.meta_dur)
-
 
     def mousePressEvent(self, event) -> None:
         print(f"{self.name} хочет играть")
@@ -129,11 +147,16 @@ class CurPlaylistGroupbox(QGroupBox):
         else:
             self.cur_track = None
 
-        self.layout.addWidget(QLabel("Пип"))
+        spacerItem = QtWidgets.QSpacerItem(0, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        self.scrollAreaWidgetLayout.addItem(spacerItem)
+
+        self.playlist_meta = QLabel(repr(playlist))
+
+        self.layout.addWidget(self.playlist_meta)
         self.layout.addWidget(self.scrollArea)
 
         self.scrollArea.setWidgetResizable(True)
-
+        self.scrollArea.setMinimumSize(QSize(500, 0))
         self.scrollAreaWidget.setGeometry(QRect(0, 0, 350, 344))
 
     @property

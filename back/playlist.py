@@ -1,7 +1,7 @@
 from typing import Union
 
 from back.linked_list import LinkedListItem, LinkedList
-from back.composition import Composition
+from back.composition import Composition, get_comp
 from back.utils import duration_from_seconds
 
 import os
@@ -99,10 +99,25 @@ def make_empty_playlist():
     return Playlist(head=None, name=None)
 
 
+def make_random_playlist():
+    from random import shuffle, randint
+    from back.database_interaction import Relator
+
+    tr_list = get_comp(list_of_all)
+    pl_len = randint(2, len(tr_list))
+    res = [tr_list.pop(randint(0, len(tr_list) - 1)) for _ in range(pl_len)]
+    # res = [tr_list.pop(randint(0, len(tr_list) - 1)) for _ in range(1)]
+    shuffle(res)
+
+    rel = Relator()
+
+    return Playlist(create_node_sequence(res), f"random playlist No {len(rel.load())}")
+
+
 def make_playlist(data: list[Composition], name: str) -> Playlist:
     seq = create_node_sequence(data)
     return Playlist(seq, name=name)
 
 
 if __name__ == '__main__':
-    print(make_list_of_all())
+    print(make_random_playlist())
