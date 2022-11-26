@@ -65,7 +65,7 @@ class Playlist(LinkedList):
     def swap(self, item, direction) -> None:
         first_item = self.find_node(item)
         second_item = first_item.previous_item
-        if direction == "down":
+        if direction == "↓":
             second_item = first_item.next_item
         super().swap(first_item, second_item)
 
