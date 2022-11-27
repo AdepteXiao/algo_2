@@ -7,6 +7,7 @@ from PyQt5.QtGui import QPixmap
 from back.composition import Composition
 from back.database_interaction import Relator
 from back.playlist import Playlist, PlaylistItem, make_list_of_all, make_random_playlist
+from back.utils import duration_from_seconds
 from front.designer_maked.des_ui import Ui_MainWindow
 
 from PyQt5.QtWidgets import (QScrollArea, QApplication, QWidget,
@@ -47,6 +48,7 @@ class MainUI(QMainWindow, Ui_MainWindow):
         for plist in self.playlists:
             new_box = CurPlaylistGroupbox(plist)
             new_box.updated.connect(self.update_handler)
+            new_box.list_updated.connect(self.update_tr_in_pll)
             if plist.name != "Все треки":
                 new_box.hide()
             else:
@@ -56,6 +58,9 @@ class MainUI(QMainWindow, Ui_MainWindow):
 
         self.verticalLayout.addLayout(self.playlistsLayout)
         self.verticalLayout.addWidget(self.playLine)
+
+    def update_tr_in_pll(self):
+        print(f"\033[0;32m[ MAIN]\033[0;0m {self.sender().name} обновил порядок треков")
 
     def update_handler(self):
         print(f"\033[0;32m[ MAIN]\033[0;0m {self.sender().name} обновился(типа)")
@@ -78,8 +83,6 @@ class MainUI(QMainWindow, Ui_MainWindow):
         self.playlist_boxes[new_list.name] = new_box
 
         self.all_playlists.add_playlist(new_list)
-
-
 
 
 class AllPlaylistsGroupbox(QGroupBox):
@@ -212,14 +215,6 @@ class TrackGroupbox(QGroupBox):
         print(f"\033[0;35m[TRACK]\033[0;0m {self.name} хочет меняться {direction}")
         self.swap_dir.emit(direction)
 
-    # def swap_up(self):
-    #     print(f"\033[0;35m[TRACK]\033[0;0m {self.name} хочет меняться вверх")
-    #     self.swap_tracks.emit("up")
-
-    # def swap_down(self):
-    #     print(f"\033[0;35m[TRACK]\033[0;0m {self.name} хочет меняться вниз")
-    #     self.swap_tracks.emit("down")
-
 
 class CurPlaylistGroupbox(QGroupBox):
     updated = pyqtSignal()
@@ -271,7 +266,7 @@ class CurPlaylistGroupbox(QGroupBox):
         print(
             f"\033[0;36m[CURPL]\033[0;0m Плейлист {self.playlist.name} "
             f"понял что {self.sender().name} хочет играть")
-        # self.playlist.current_track = self.sender().composition
+        self.playlist.current_track = self.sender().composition
         self.updated.emit()
 
     def swap_tracks(self, direction):
@@ -320,15 +315,14 @@ class PlayLineGroupBox(QGroupBox):
     def __init__(self, playlist: Playlist):
         super().__init__()
         self.cur_playlist = playlist
-        self.cur_track = self.cur_playlist.current_track
-        self.setTitle(playlist.name)
+        self.setTitle(self.cur_playlist.name)
 
         self.layout = QVBoxLayout(self)
 
         self.metaLayout = QHBoxLayout(self)
         self.pic = QLabel()
-        self.pic.setPixmap(make_pixmap(self.cur_track.image, 32, 32))
-        self.name = QLabel(self.cur_track.name)
+        self.pic.setPixmap(make_pixmap(self.cur_playlist.current_track.image, 32, 32))
+        self.name = QLabel(repr(self.cur_playlist.current_track))
         self.metaLayout.addWidget(self.pic)
         self.metaLayout.addWidget(self.name)
         spacerItem = QtWidgets.QSpacerItem(1000, 0, QtWidgets.QSizePolicy.Expanding,
@@ -339,7 +333,10 @@ class PlayLineGroupBox(QGroupBox):
         self.cur_dur = QLabel('00:00')
         self.bar = QSlider()
         self.bar.setOrientation(Qt.Horizontal)
-        self.dur = QLabel(self.cur_track.dur())
+        self.dur = QLabel(self.cur_playlist.current_track.dur())
+        self.bar.setRange(
+            0, int(self.cur_playlist.current_track.duration))
+        self.bar.setValue(0)
         self.trackProgressLayout.addWidget(self.cur_dur)
         self.trackProgressLayout.addWidget(self.bar)
         self.trackProgressLayout.addWidget(self.dur)
@@ -349,14 +346,54 @@ class PlayLineGroupBox(QGroupBox):
         self.pause = QPushButton("||")
         self.play = QPushButton("|>")
         self.next = QPushButton("->")
+
+        self.pause.clicked.connect(self.pause_f)
+        self.play.clicked.connect(self.play_f)
+        self.prev.clicked.connect(self.prev_f)
+        self.next.clicked.connect(self.next_f)
+
         self.controlsLayout.addWidget(self.prev)
         self.controlsLayout.addWidget(self.pause)
         self.controlsLayout.addWidget(self.play)
         self.controlsLayout.addWidget(self.next)
+        self.pause.hide()
 
         self.layout.addLayout(self.metaLayout)
         self.layout.addLayout(self.trackProgressLayout)
         self.layout.addLayout(self.controlsLayout)
+
+    def play_f(self):
+        self.play.hide()
+        self.pause.show()
+
+    def pause_f(self):
+        self.pause.hide()
+        self.play.show()
+
+    def prev_f(self):
+        self.cur_playlist.previous_track()
+        self.update_playline()
+        self.play_f()
+
+    def next_f(self):
+        self.cur_playlist.next_track()
+        self.update_playline()
+        self.play_f()
+
+    def make_pll_cur(self, playlist: PlaylistGroupbox):
+        print(f"\033[0;36m[PLINE]\033[0;0m Текущий плейлист обновился")
+        self.cur_playlist = playlist
+        self.update_playline()
+
+    def update_playline(self):
+        print(f"\033[0;36m[PLINE]\033[0;0m Плэйлайн обновился!!!")
+        self.pic.setPixmap(make_pixmap(self.cur_playlist.current_track.image, 32, 32))
+        self.name.setText(repr(self.cur_playlist.current_track))
+        self.dur.setText(
+            duration_from_seconds(self.cur_playlist.current_track.duration))
+        self.bar.setRange(
+            0, int(self.cur_playlist.current_track.duration))
+        self.bar.setValue(0)
 
 
 if __name__ == '__main__':
