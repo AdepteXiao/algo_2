@@ -14,7 +14,7 @@ from PyQt5.QtWidgets import (QScrollArea, QApplication, QWidget,
                              QMainWindow, QHBoxLayout, QVBoxLayout,
                              QLabel, QSpacerItem, QSizePolicy,
                              QPushButton, QSlider,
-                             QGroupBox, QDialog, QCheckBox, QLineEdit)
+                             QGroupBox, QMenu, QInputDialog)
 
 
 def make_pixmap(img: bytes, size_x: int, size_y: int) -> QPixmap:
@@ -38,17 +38,19 @@ class MainUI(QMainWindow, Ui_MainWindow):
         self.playLine = PlayLineGroupBox(make_list_of_all())
 
         self.all_playlists = AllPlaylistsGroupbox(self.playlists)
-        self.all_playlists.to_be_cur.connect(self.cur)
-        self.all_playlists.add_new_list.connect(self.add)
+        self.all_playlists.to_be_cur.connect(self.cur)  # noqa
+        self.all_playlists.add_new_list.connect(self.add)  # noqa
+        self.all_playlists.rename_pllist.connect(self.rename)  # noqa
+        self.all_playlists.delete_pllist.connect(self.delete)  # noqa
 
         self.playlistsLayout.addWidget(self.all_playlists)
 
         self.playlist_boxes = dict()
         self.cur_plist = None
         for plist in self.playlists:
-            new_box = CurPlaylistGroupbox(plist)
-            new_box.updated.connect(self.update_handler)
-            new_box.list_updated.connect(self.update_tr_in_pll)
+            new_box = CurPlaylistGroupbox(plist, self)
+            new_box.updated.connect(self.update_handler)  # noqa
+            new_box.list_updated.connect(self.update_tr_in_pll)  # noqa
             if plist.name != "Все треки":
                 new_box.hide()
             else:
@@ -60,10 +62,10 @@ class MainUI(QMainWindow, Ui_MainWindow):
         self.verticalLayout.addWidget(self.playLine)
 
     def update_tr_in_pll(self):
-        print(f"\033[0;32m[ MAIN]\033[0;0m {self.sender().name} обновил порядок треков")
+        print(f"\033[0;32m[ MAIN]\033[0;0m {self.sender().name} обновил порядок треков")  # noqa
 
     def update_handler(self):
-        print(f"\033[0;32m[ MAIN]\033[0;0m {self.sender().name} обновился(типа)")
+        print(f"\033[0;32m[ MAIN]\033[0;0m {self.sender().name} обновился(типа)")  # noqa
 
     def cur(self, name):
         print(f"\033[0;32m[ MAIN]\033[0;0m делает {name} текущим")
@@ -75,8 +77,9 @@ class MainUI(QMainWindow, Ui_MainWindow):
         print(f"\033[0;32m[ MAIN]\033[0;0m генерит новый плейлист")
         new_list = make_random_playlist(len(self.playlist_boxes))
 
-        new_box = CurPlaylistGroupbox(new_list)
-        new_box.updated.connect(self.update_handler)
+        new_box = CurPlaylistGroupbox(new_list, self)
+        new_box.updated.connect(self.update_handler)  # noqa
+        new_box.list_updated.connect(self.update_tr_in_pll)  # noqa
         new_box.hide()
 
         self.playlistsLayout.addWidget(new_box)
@@ -84,10 +87,29 @@ class MainUI(QMainWindow, Ui_MainWindow):
 
         self.all_playlists.add_playlist(new_list)
 
+    def rename(self, names):
+        old_name, new_name = names
+        print(f"\033[0;32m[ MAIN]\033[0;0m меняет имя {old_name} на {new_name}")
+        old_name_val = self.playlist_boxes[old_name]
+        del self.playlist_boxes[old_name]
+        self.playlist_boxes[new_name] = old_name_val
+        old_name_val.playlist.name = new_name
+        old_name_val.upd()
+
+    def delete(self, name):
+        print(f"\033[0;32m[ MAIN]\033[0;0m удаляет плейлист {name}")
+        pllist_box = self.playlist_boxes[name]
+        if pllist_box == self.cur_plist:
+            self.cur("Все треки")
+        del self.playlist_boxes[name]
+        pllist_box.deleteLater()
+
 
 class AllPlaylistsGroupbox(QGroupBox):
     to_be_cur = pyqtSignal(str)
     add_new_list = pyqtSignal()
+    rename_pllist = pyqtSignal(tuple)
+    delete_pllist = pyqtSignal(str)
 
     def __init__(self, playlists: list):
         super().__init__()
@@ -103,12 +125,14 @@ class AllPlaylistsGroupbox(QGroupBox):
         self.playlist_boxes = []
         for playlist in playlists:
             new_playlist = PlaylistGroupbox(playlist, self)
-            new_playlist.want_to_be_cur.connect(self.pll_to_be_cur)
+            new_playlist.want_to_be_cur.connect(self.pll_to_be_cur)  # noqa
+            new_playlist.want_to_be_renamed.connect(self.pll_to_be_renamed)  # noqa
+            new_playlist.want_to_be_deleted.connect(self.pll_to_be_deleted)  # noqa
 
             self.playlist_boxes.append(new_playlist)
             self.scrollAreaWidgetLayout.addWidget(new_playlist)
         self.addNewListBox = AddNewListGroupbox(self)
-        self.addNewListBox.want_to_add_list.connect(self.pll_to_be_added)
+        self.addNewListBox.want_to_add_list.connect(self.pll_to_be_added)  # noqa
 
         self.scrollAreaWidgetLayout.addWidget(self.addNewListBox)
 
@@ -124,7 +148,9 @@ class AllPlaylistsGroupbox(QGroupBox):
 
     def add_playlist(self, playlist: Playlist):
         new_playlist = PlaylistGroupbox(playlist, self)
-        new_playlist.want_to_be_cur.connect(self.pll_to_be_cur)
+        new_playlist.want_to_be_cur.connect(self.pll_to_be_cur)  # noqa
+        new_playlist.want_to_be_renamed.connect(self.pll_to_be_renamed)  # noqa
+        new_playlist.want_to_be_deleted.connect(self.pll_to_be_deleted)  # noqa
 
         self.playlist_boxes.append(new_playlist)
         widgets_count = self.scrollAreaWidgetLayout.count()
@@ -132,27 +158,66 @@ class AllPlaylistsGroupbox(QGroupBox):
 
     def pll_to_be_cur(self, name):
         print(f"\033[0;39m[ALLPL]\033[0;0m понял, что {name} хочет стать текущим")
-        self.to_be_cur.emit(name)
+        self.to_be_cur.emit(name)  # noqa
 
     def pll_to_be_added(self):
         print(f"\033[0;39m[ALLPL]\033[0;0m хочет добавить новый плейлист")
-        self.add_new_list.emit()
+        self.add_new_list.emit()  # noqa
+
+    def pll_to_be_renamed(self, new_name):
+        print(f"\033[0;39m[ALLPL]\033[0;0m понял, что {self.sender().name} "  # noqa
+              f"хочет сменить имя на {new_name}")
+        self.rename_pllist.emit((self.sender().name, new_name))  # noqa
+
+    def pll_to_be_deleted(self):
+        print(f"\033[0;39m[ALLPL]\033[0;0m удаляет кнопку "
+              f"плейлиста под именем {self.sender().name}")  # noqa
+        self.sender().deleteLater()
+
+        self.delete_pllist.emit(self.sender().name)  # noqa
 
 
 class PlaylistGroupbox(QGroupBox):
     want_to_be_cur = pyqtSignal(str)
+    want_to_be_renamed = pyqtSignal(str)
+    want_to_be_deleted = pyqtSignal()
 
     def __init__(self, playlist: Playlist, parent=None):
         super().__init__(parent)
         self.layout = QVBoxLayout(self)
+        self.playlist = playlist
         self.name = playlist.name
         self.meta = QLabel(playlist.meta())
         self.layout.addWidget(self.meta)
         self.layout.addItem(QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum))
 
     def mousePressEvent(self, event) -> None:
-        print(f"\033[0;34m[PLLST]\033[0;0m {self.name} хочет стать текущим")
-        self.want_to_be_cur.emit(self.name)
+        if event.button() == Qt.LeftButton:
+            print(f"\033[0;34m[PLLST]\033[0;0m {self.name} хочет стать текущим")
+            self.want_to_be_cur.emit(self.name)  # noqa
+        elif event.button() == Qt.RightButton:
+            print(f"\033[0;34m[PLLST]\033[0;0m {self.name} хочет открыть попап меню")
+
+    def contextMenuEvent(self, event: QtGui.QContextMenuEvent) -> None:
+        if self.name != "Все треки":
+            contextMenu = QMenu(self)
+            renameAct = contextMenu.addAction("Переименовать плейлист")
+            deleteAct = contextMenu.addAction("Удалить плейлист")
+
+            action = contextMenu.exec_(self.mapToGlobal(event.pos()))
+            if action == deleteAct:
+                print(f"\033[0;34m[PLLST]\033[0;0m {self.name} хочет удалиться")
+                self.want_to_be_deleted.emit()  # noqa
+            elif action == renameAct:
+                print(f"\033[0;34m[PLLST]\033[0;0m {self.name} хочет переименоваться")
+                text, ok = QInputDialog(self).getText(self,
+                                                      ' ', 'Введите новое название плейлиста:',
+                                                      text=self.name)
+                if ok and text != self.name:
+                    self.want_to_be_renamed.emit(text)  # noqa
+                    self.name = text
+                    self.playlist.name = text
+                    self.meta.setText(self.playlist.meta())
 
 
 class AddNewListGroupbox(QGroupBox):
@@ -170,16 +235,17 @@ class AddNewListGroupbox(QGroupBox):
 
     def mousePressEvent(self, event) -> None:
         print(f"\033[0;34m[ADDER]\033[0;0m хочет добавить плейлист")
-        self.want_to_add_list.emit()
+        self.want_to_add_list.emit()  # noqa
 
 
 class TrackGroupbox(QGroupBox):
     want_play = pyqtSignal()
     swap_dir = pyqtSignal(str)
+    want_to_remove = pyqtSignal()
 
     def __init__(self, composition: Composition, parent=None):
         super().__init__(parent)
-
+        self.parent = parent
         self.upDownLayout = QHBoxLayout()
         self.up = QPushButton("↑")
         self.down = QPushButton("↓")
@@ -207,21 +273,48 @@ class TrackGroupbox(QGroupBox):
         self.layout.addWidget(self.meta_dur)
 
     def mousePressEvent(self, event) -> None:
-        print(f"\033[0;35m[TRACK]\033[0;0m {self.name} хочет играть")
-        self.want_play.emit()
+        if event.button() == Qt.LeftButton:
+            print(f"\033[0;35m[TRACK]\033[0;0m {self.name} хочет играть")
+            self.want_play.emit()  # noqa
+        elif event.button() == Qt.RightButton:
+            print(f"\033[0;35m[TRACK]\033[0;0m {self.name} хочет открыть попап меню")
+
+    def contextMenuEvent(self, event: QtGui.QContextMenuEvent) -> None:
+        contextMenu = QMenu(self)
+        if self.parent.name != "Все треки":
+            removeAct = contextMenu.addAction("Удалить из плейлиста")
+        plist_dict = self.parent.parent.playlist_boxes
+        actions_dict = {
+            contextMenu.addAction(f"Добавить в плейлист: {pl_name}"): plist_dict[pl_name] for
+            pl_name in plist_dict.keys() if pl_name != "Все треки"}
+
+        action = contextMenu.exec_(self.mapToGlobal(event.pos()))
+        if self.parent.name != "Все треки" and action == removeAct:  # noqa
+            print(f"\033[0;35m[TRACK]\033[0;0m {self.name} "
+                  f"хочет удалиться из плейлиста {self.parent.playlist.name}")
+            self.want_to_remove.emit()  # noqa
+        else:
+            add_to_this = actions_dict.get(action, False)
+            if add_to_this:
+                track_names = [track.data.name for track in add_to_this.playlist]  # noqa
+                if self.composition.name not in track_names:
+                    add_to_this.append_track(self.composition)  # noqa
 
     def swap_direction(self):
-        direction = self.sender().text()
+        direction = self.sender().text()  # noqa
         print(f"\033[0;35m[TRACK]\033[0;0m {self.name} хочет меняться {direction}")
-        self.swap_dir.emit(direction)
+        self.swap_dir.emit(direction)  # noqa
 
 
 class CurPlaylistGroupbox(QGroupBox):
     updated = pyqtSignal()
     list_updated = pyqtSignal(int)
 
-    def __init__(self, playlist: Playlist):
+    def __init__(self, playlist: Playlist, parent):
         super().__init__()
+
+        self.parent = parent
+
         self.playlist = playlist
         self.setTitle(playlist.name)
 
@@ -235,8 +328,9 @@ class CurPlaylistGroupbox(QGroupBox):
         self.track_boxes = []
         for song in playlist:
             new_track = TrackGroupbox(song.data, self)
-            new_track.want_play.connect(self.play_slot)
-            new_track.swap_dir.connect(self.swap_tracks)
+            new_track.want_play.connect(self.play_slot)  # noqa
+            new_track.swap_dir.connect(self.swap_tracks)  # noqa
+            new_track.want_to_remove.connect(self.remove_track)  # noqa
             self.track_boxes.append(new_track)
             self.scrollAreaWidgetLayout.addWidget(new_track)
 
@@ -266,14 +360,15 @@ class CurPlaylistGroupbox(QGroupBox):
         print(
             f"\033[0;36m[CURPL]\033[0;0m Плейлист {self.playlist.name} "
             f"понял что {self.sender().name} хочет играть")
-        self.playlist.current_track = self.sender().composition
-        self.updated.emit()
+        self.playlist.current_track = self.sender().composition  # noqa
+        self.updated.emit()  # noqa
 
     def swap_tracks(self, direction):
         print(
-            f"\033[0;36m[CURPL]\033[0;0m Плейлист {self.playlist.name} понял что {self.sender().name} "
+            f"\033[0;36m[CURPL]\033[0;0m Плейлист {self.playlist.name} "
+            f"понял что {self.sender().name} "
             f"хочет поменяться местами {direction}")
-        track = self.sender().composition
+        track = self.sender().composition  # noqa
         self.playlist.swap(track, direction)
         self.upd()
 
@@ -290,10 +385,13 @@ class CurPlaylistGroupbox(QGroupBox):
                 self.scrollAreaWidgetLayout.removeItem(item)
             else:
                 item.widget().deleteLater()
+
+        self.setTitle(self.playlist.name)
         for song in self.playlist:
-            track = TrackGroupbox(song.data)
-            track.swap_dir.connect(self.swap_tracks)
-            track.clicked.connect(self.play_slot)
+            track = TrackGroupbox(song.data, self)
+            track.swap_dir.connect(self.swap_tracks)  # noqa
+            track.clicked.connect(self.play_slot)  # noqa
+            track.want_to_remove.connect(self.remove_track)  # noqa
             self.scrollAreaWidgetLayout.addWidget(track)
             self.track_boxes.append(track)
 
@@ -305,7 +403,20 @@ class CurPlaylistGroupbox(QGroupBox):
             self.cur_track = self.track_boxes[0]
 
         self.update_meta()
-        self.list_updated.emit(index)
+        self.list_updated.emit(index)  # noqa
+
+    def remove_track(self):
+        print(f"\033[0;36m[CURPL]\033[0;0m Плейлист {self.playlist.name} "
+              f"удаляет трек {self.sender().name}")
+        self.playlist.remove(self.sender().composition)  # noqa
+        print(self.playlist)
+        self.upd()
+
+    def append_track(self, track):
+        print(f"\033[0;36m[CURPL]\033[0;0m Плейлист {self.playlist.name} "
+              f"добавляет трек {track}")
+        self.playlist.append(track)
+        self.upd()
 
     def update_meta(self):
         self.playlist_meta.setText(str(self.playlist))
