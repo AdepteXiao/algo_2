@@ -99,7 +99,7 @@ def make_empty_playlist():
     return Playlist(head=None, name=None)
 
 
-def make_random_playlist():
+def make_random_playlist(pl_count):
     from random import shuffle, randint
     from back.database_interaction import Relator
 
@@ -111,7 +111,7 @@ def make_random_playlist():
 
     rel = Relator()
 
-    return Playlist(create_node_sequence(res), f"random playlist No {len(rel.load())}")
+    return Playlist(create_node_sequence(res), f"random playlist No {pl_count}")
 
 
 def make_playlist(data: list[Composition], name: str) -> Playlist:
@@ -120,4 +120,4 @@ def make_playlist(data: list[Composition], name: str) -> Playlist:
 
 
 if __name__ == '__main__':
-    print(make_random_playlist())
+    print(*make_random_playlist())
