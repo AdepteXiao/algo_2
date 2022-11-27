@@ -6,7 +6,7 @@ from PyQt5.QtGui import QPixmap
 
 from back.composition import Composition
 from back.database_interaction import Relator
-from back.playlist import Playlist, PlaylistItem, make_list_of_all
+from back.playlist import Playlist, PlaylistItem, make_list_of_all, make_random_playlist
 from front.designer_maked.des_ui import Ui_MainWindow
 
 from PyQt5.QtWidgets import (QScrollArea, QApplication, QWidget,
@@ -28,72 +28,146 @@ class MainUI(QMainWindow, Ui_MainWindow):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
+
         self.relator = Relator()
+        self.playlists = self.relator.load_playlists()
+
+        self.playlistsLayout = QHBoxLayout(self)
+
         self.playLine = PlayLineGroupBox(make_list_of_all())
-        self.all_playlists = AllPlaylistsGroupbox(self.relator)
+
+        self.all_playlists = AllPlaylistsGroupbox(self.playlists)
         self.all_playlists.to_be_cur.connect(self.cur)
-        self.cur_playlist = CurPlaylistGroupbox(make_list_of_all())
-        self.cur_playlist.updated.connect(self.update_handler)
+        self.all_playlists.add_new_list.connect(self.add)
+
         self.playlistsLayout.addWidget(self.all_playlists)
-        self.allPlaylistsGroupBox.hide()
-        self.playlistsLayout.addWidget(self.cur_playlist)
-        self.curPlaylistGroupBox.hide()
+
+        self.playlist_boxes = dict()
+        self.cur_plist = None
+        for plist in self.playlists:
+            new_box = CurPlaylistGroupbox(plist)
+            new_box.updated.connect(self.update_handler)
+            if plist.name != "Все треки":
+                new_box.hide()
+            else:
+                self.cur_plist = new_box
+            self.playlistsLayout.addWidget(new_box)
+            self.playlist_boxes[plist.name] = new_box
+
+        self.verticalLayout.addLayout(self.playlistsLayout)
         self.verticalLayout.addWidget(self.playLine)
-        self.playLineGroupBox.hide()
 
     def update_handler(self):
         print(f"\033[0;32m[ MAIN]\033[0;0m {self.sender().name} обновился(типа)")
 
-    def cur(self):
-        print(f"\033[0;32m[ MAIN]\033[0;0m {self.sender()} обновился(типа)")
+    def cur(self, name):
+        print(f"\033[0;32m[ MAIN]\033[0;0m делает {name} текущим")
+        self.cur_plist.hide()
+        self.cur_plist = self.playlist_boxes[name]
+        self.cur_plist.show()
+
+    def add(self):
+        print(f"\033[0;32m[ MAIN]\033[0;0m генерит новый плейлист")
+        new_list = make_random_playlist(len(self.playlist_boxes))
+
+        new_box = CurPlaylistGroupbox(new_list)
+        new_box.updated.connect(self.update_handler)
+        new_box.hide()
+
+        self.playlistsLayout.addWidget(new_box)
+        self.playlist_boxes[new_list.name] = new_box
+
+        self.all_playlists.add_playlist(new_list)
+
+
 
 
 class AllPlaylistsGroupbox(QGroupBox):
-    to_be_cur = pyqtSignal()
+    to_be_cur = pyqtSignal(str)
+    add_new_list = pyqtSignal()
 
-    def __init__(self, relator: Relator):
+    def __init__(self, playlists: list):
         super().__init__()
         self.setTitle('Плейлисты')
+
         self.layout = QVBoxLayout(self)
+
         self.scrollArea = QScrollArea()
         self.scrollAreaWidget = QWidget()
         self.scrollAreaWidgetLayout = QVBoxLayout(self.scrollAreaWidget)
         self.scrollArea.setWidget(self.scrollAreaWidget)
+
         self.playlist_boxes = []
-        for playlist in relator.load_playlists():
+        for playlist in playlists:
             new_playlist = PlaylistGroupbox(playlist, self)
             new_playlist.want_to_be_cur.connect(self.pll_to_be_cur)
+
             self.playlist_boxes.append(new_playlist)
             self.scrollAreaWidgetLayout.addWidget(new_playlist)
-        spacerItem = QtWidgets.QSpacerItem(0, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
-        self.scrollAreaWidgetLayout.addItem(spacerItem)
+        self.addNewListBox = AddNewListGroupbox(self)
+        self.addNewListBox.want_to_add_list.connect(self.pll_to_be_added)
+
+        self.scrollAreaWidgetLayout.addWidget(self.addNewListBox)
+
+        self.scrollAreaWidgetLayout.addItem(
+            QtWidgets.QSpacerItem(0, 40,
+                                  QtWidgets.QSizePolicy.Minimum,
+                                  QtWidgets.QSizePolicy.Expanding))
         self.layout.addWidget(self.scrollArea)
+
         self.scrollArea.setWidgetResizable(True)
         self.scrollAreaWidget.setGeometry(QRect(0, 0, 350, 344))
         self.scrollArea.setMinimumSize(QSize(300, 0))
 
-    def pll_to_be_cur(self):
-        print(f"\033[0;39m[ALLPL]\033[0;0m AllPlaylists понял, что {self.sender().name} хочет стать текущим")
-        self.to_be_cur.emit()
+    def add_playlist(self, playlist: Playlist):
+        new_playlist = PlaylistGroupbox(playlist, self)
+        new_playlist.want_to_be_cur.connect(self.pll_to_be_cur)
+
+        self.playlist_boxes.append(new_playlist)
+        widgets_count = self.scrollAreaWidgetLayout.count()
+        self.scrollAreaWidgetLayout.insertWidget(widgets_count - 2, new_playlist)
+
+    def pll_to_be_cur(self, name):
+        print(f"\033[0;39m[ALLPL]\033[0;0m понял, что {name} хочет стать текущим")
+        self.to_be_cur.emit(name)
+
+    def pll_to_be_added(self):
+        print(f"\033[0;39m[ALLPL]\033[0;0m хочет добавить новый плейлист")
+        self.add_new_list.emit()
 
 
 class PlaylistGroupbox(QGroupBox):
-    want_to_be_cur = pyqtSignal()
+    want_to_be_cur = pyqtSignal(str)
 
     def __init__(self, playlist: Playlist, parent=None):
         super().__init__(parent)
         self.layout = QVBoxLayout(self)
-        self.playlist = playlist
         self.name = playlist.name
-        self.duration = playlist.duration
-        self.cur_track = playlist.current_track
         self.meta = QLabel(playlist.meta())
         self.layout.addWidget(self.meta)
         self.layout.addItem(QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum))
 
     def mousePressEvent(self, event) -> None:
         print(f"\033[0;34m[PLLST]\033[0;0m {self.name} хочет стать текущим")
-        self.want_to_be_cur.emit()
+        self.want_to_be_cur.emit(self.name)
+
+
+class AddNewListGroupbox(QGroupBox):
+    want_to_add_list = pyqtSignal()
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.add_new_box_layout = QHBoxLayout(self)
+        self.label = QLabel("Добавить плейлист\n")
+        self.add_new_box_layout.addWidget(self.label)
+        # self.add_new_box_layout.addItem(
+        #     QtWidgets.QSpacerItem(0, 40,
+        #                           QtWidgets.QSizePolicy.Minimum,
+        #                           QtWidgets.QSizePolicy.Expanding))
+
+    def mousePressEvent(self, event) -> None:
+        print(f"\033[0;34m[ADDER]\033[0;0m хочет добавить плейлист")
+        self.want_to_add_list.emit()
 
 
 class TrackGroupbox(QGroupBox):
@@ -124,7 +198,8 @@ class TrackGroupbox(QGroupBox):
         self.upDownLayout.addWidget(self.down)
         self.layout.addWidget(self.pic)
         self.layout.addWidget(self.meta)
-        spacerItem = QtWidgets.QSpacerItem(40, 0, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        spacerItem = QtWidgets.QSpacerItem(40, 0, QtWidgets.QSizePolicy.Expanding,
+                                           QtWidgets.QSizePolicy.Minimum)
         self.layout.addItem(spacerItem)
         self.layout.addWidget(self.meta_dur)
 
@@ -175,7 +250,8 @@ class CurPlaylistGroupbox(QGroupBox):
         else:
             self.cur_track = None
 
-        spacerItem = QtWidgets.QSpacerItem(0, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        spacerItem = QtWidgets.QSpacerItem(0, 40, QtWidgets.QSizePolicy.Minimum,
+                                           QtWidgets.QSizePolicy.Expanding)
         self.scrollAreaWidgetLayout.addItem(spacerItem)
 
         self.playlist_meta = QLabel(repr(playlist))
@@ -192,13 +268,16 @@ class CurPlaylistGroupbox(QGroupBox):
         return self.playlist.name
 
     def play_slot(self):
-        print(f"\033[0;36m[CURPL]\033[0;0m Плейлист {self.playlist.name} понял что {self.sender().name} хочет играть")
+        print(
+            f"\033[0;36m[CURPL]\033[0;0m Плейлист {self.playlist.name} "
+            f"понял что {self.sender().name} хочет играть")
         # self.playlist.current_track = self.sender().composition
         self.updated.emit()
 
     def swap_tracks(self, direction):
-        print(f"\033[0;36m[CURPL]\033[0;0m Плейлист {self.playlist.name} понял что {self.sender().name} "
-              f"хочет поменяться местами {direction}")
+        print(
+            f"\033[0;36m[CURPL]\033[0;0m Плейлист {self.playlist.name} понял что {self.sender().name} "
+            f"хочет поменяться местами {direction}")
         track = self.sender().composition
         self.playlist.swap(track, direction)
         self.upd()
@@ -212,8 +291,7 @@ class CurPlaylistGroupbox(QGroupBox):
         count = self.scrollAreaWidgetLayout.count()
         for i in range(0, count):
             item = self.scrollAreaWidgetLayout.itemAt(i)
-            print(item.widget())
-            if i == count-1:
+            if i == count - 1:
                 self.scrollAreaWidgetLayout.removeItem(item)
             else:
                 item.widget().deleteLater()
@@ -224,7 +302,8 @@ class CurPlaylistGroupbox(QGroupBox):
             self.scrollAreaWidgetLayout.addWidget(track)
             self.track_boxes.append(track)
 
-        spacerItem = QtWidgets.QSpacerItem(0, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        spacerItem = QtWidgets.QSpacerItem(0, 40, QtWidgets.QSizePolicy.Minimum,
+                                           QtWidgets.QSizePolicy.Expanding)
         self.scrollAreaWidgetLayout.addItem(spacerItem)
 
         if not is_filled:
@@ -252,7 +331,8 @@ class PlayLineGroupBox(QGroupBox):
         self.name = QLabel(self.cur_track.name)
         self.metaLayout.addWidget(self.pic)
         self.metaLayout.addWidget(self.name)
-        spacerItem = QtWidgets.QSpacerItem(1000, 0, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        spacerItem = QtWidgets.QSpacerItem(1000, 0, QtWidgets.QSizePolicy.Expanding,
+                                           QtWidgets.QSizePolicy.Minimum)
         self.metaLayout.addItem(spacerItem)
 
         self.trackProgressLayout = QHBoxLayout(self)
