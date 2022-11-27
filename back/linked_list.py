@@ -69,8 +69,8 @@ class LinkedList:
         new_node = LinkedListItem(item)
         self.head = new_node
         self.tail = new_node
-        new_node.previous_item = self.head
-        new_node.next_item = self.tail
+        new_node.previous_item = self.tail
+        new_node.next_item = self.head
         self.size += 1
 
     def append_left(self, item):
@@ -90,59 +90,44 @@ class LinkedList:
         if self.head is None:
             self.append_to_empty_list(item)
             return
-        node = self.tail
         new_node = LinkedListItem(item)
-        node.next_item = new_node
-        new_node.previous_item = node
+        self.tail.next_item = new_node
         self.tail = new_node
+        self.tail.next_item = self.head
+        self.head.previous_item = self.tail
         self.size += 1
 
     def insert(self, previous, item):
-        if self.head is None:
-            print("List is empty")
-            return
-        else:
-            node = self.head
-            while node is not self.tail:
-                if node.data == previous:
-                    break
-                node = node.next_item
-            if node is self.tail:
-                print("data not in the list")
-            else:
-                new_node = LinkedListItem(item)
-                node.next_item.previous_item = new_node
-                new_node.previous_item = node
-                new_node.next_item = node.next_item
-                node.next_item = new_node
-                self.size += 1
+        if not isinstance(previous, LinkedListItem):
+            previous = self.find_node(previous)
+        new_node = LinkedListItem(item)
+        nxt = previous.next_item
+        nxt.previous_item = new_node
+        previous.next_item = new_node
+        new_node.previous_item = previous
+        new_node.next_item = nxt
+        self.size += 1
 
     def remove(self, item):
-        if self.head is None:
-            print("The list has no element to delete")
-            return
-        if self.head is self.tail:
-            if self.head.data == item:
-                self.head = None
-            else:
-                print("Item not found")
+        if not isinstance(item, LinkedListItem):
+            item = self.find_node(item)
+
+        if self.size == 1:
+            self.head = None
+            self.tail = None
+            self.size = 0
+            del item
             return
 
-        if self.tail.data == item:
-            self.tail = self.tail.previous_item
-            return
+        if self.tail == item:
+            self.tail = item.previous_item
 
-        if self.head.data == item:
-            self.head = self.head.next_item
-            return
+        if self.head == item:
+            self.head = item.next_item
 
-        node = self.head
-        while node.next_item is not self.tail:
-            if node.data == item:
-                break
-            node = node.next_item
-        node.previous_item.next_item = node.next_item
-        node.next_item.previous_item = node.previous_item
+        item.previous_item.next_item = item.next_item
+        item.next_item.previous_item = item.previous_item
+        del item
         self.size -= 1
 
     def find_node(self, data: object) -> LinkedListItem:
@@ -195,33 +180,29 @@ class LinkedList:
             pointer = pointer.next_item
 
     def __contains__(self, item: object) -> bool:
-        node = self.head
-        while node is not self.tail:
-            if node.data == item:
+        for list_item in self:
+            if item in (list_item, list_item.data):
                 return True
-            node = node.next_item
-        if self.tail.data == item:
-            return True
         return False
 
     def __reversed__(self) -> Generator:
         node = self.tail
-        for i in range(self.size):
-            yield node
+        for _ in range(self.size):
+            yield node.data
             node = node.previous_item
 
     def __getitem__(self, index: int) -> object:
         if index >= self.size or abs(index) > self.size:
             raise IndexError("index out of range")
         if index >= 0:
-            node = self.head
-            for i in range(index):
-                node = node.next_item
+            ptr = self.head
+            for _ in range(index):
+                ptr = ptr.next_item
         else:
-            node = self.tail
-            for i in range(-1, index, -1):
-                node = node.previous_item
-        return node.data
+            ptr = self.tail
+            for _ in range(-1, index, -1):
+                ptr = ptr.previous_item
+        return ptr.data
 
     def __str__(self):
         return f"{self.__class__.__name__}([{', '.join([str(i) for i in self])}])"
