@@ -31,6 +31,7 @@ class MainUI(QMainWindow, Ui_MainWindow):
         self.relator = Relator()
         self.playLine = PlayLineGroupBox(make_list_of_all())
         self.all_playlists = AllPlaylistsGroupbox(self.relator)
+        self.all_playlists.to_be_cur.connect(self.cur)
         self.cur_playlist = CurPlaylistGroupbox(make_list_of_all())
         self.cur_playlist.updated.connect(self.update_handler)
         self.playlistsLayout.addWidget(self.all_playlists)
@@ -41,10 +42,15 @@ class MainUI(QMainWindow, Ui_MainWindow):
         self.playLineGroupBox.hide()
 
     def update_handler(self):
-        print(f"\033[0;32m[ MAIN]\033[0;0m {self.sender().name} обновился")
+        print(f"\033[0;32m[ MAIN]\033[0;0m {self.sender().name} обновился(типа)")
+
+    def cur(self):
+        print(f"\033[0;32m[ MAIN]\033[0;0m {self.sender()} обновился(типа)")
 
 
 class AllPlaylistsGroupbox(QGroupBox):
+    to_be_cur = pyqtSignal()
+
     def __init__(self, relator: Relator):
         super().__init__()
         self.setTitle('Плейлисты')
@@ -56,7 +62,7 @@ class AllPlaylistsGroupbox(QGroupBox):
         self.playlist_boxes = []
         for playlist in relator.load_playlists():
             new_playlist = PlaylistGroupbox(playlist, self)
-            # new_playlist.want_to_be_cur.connect(self.)
+            new_playlist.want_to_be_cur.connect(self.pll_to_be_cur)
             self.playlist_boxes.append(new_playlist)
             self.scrollAreaWidgetLayout.addWidget(new_playlist)
         spacerItem = QtWidgets.QSpacerItem(0, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
@@ -65,6 +71,10 @@ class AllPlaylistsGroupbox(QGroupBox):
         self.scrollArea.setWidgetResizable(True)
         self.scrollAreaWidget.setGeometry(QRect(0, 0, 350, 344))
         self.scrollArea.setMinimumSize(QSize(300, 0))
+
+    def pll_to_be_cur(self):
+        print(f"\033[0;39m[ALLPL]\033[0;0m AllPlaylists понял, что {self.sender().name} хочет стать текущим")
+        self.to_be_cur.emit()
 
 
 class PlaylistGroupbox(QGroupBox):
