@@ -36,6 +36,10 @@ class LinkedListItem:
 
 class LinkedList:
     def __init__(self, head: Union[LinkedListItem, None] = None) -> None:
+        """
+        Конструктор класса, присваивает первому и последнему элементу значение первой и последней ноды списка
+        :param head: первая нода списка
+        """
         self.__head = head
 
         if head is None:
@@ -51,21 +55,41 @@ class LinkedList:
 
     @property
     def head(self) -> Union[LinkedListItem, None]:
+        """
+        Свойство геттер значения первой ноды
+        :return: значение первой ноды
+        """
         return self.__head
 
     @property
     def tail(self) -> Union[LinkedListItem, None]:
+        """
+        Свойство геттер значения последней ноды
+        :return: значение последней нода
+        """
         return self.__tail
 
     @tail.setter
     def tail(self, value: Union[LinkedListItem, None]) -> None:
+        """
+        Свойство сеттер значения последней ноды
+        :param value: нода
+        """
         self.__tail = value
 
     @head.setter
     def head(self, value: Union[LinkedListItem, None]) -> None:
+        """
+        Свойство сеттер значения первой ноды списка
+        :param value: нода
+        """
         self.__head = value
 
     def append_to_empty_list(self, item):
+        """
+        Метод вставки ноды в пустой список
+        :param item: вставляемая нода
+        """
         new_node = LinkedListItem(item)
         self.head = new_node
         self.tail = new_node
@@ -73,7 +97,11 @@ class LinkedList:
         new_node.next_item = self.head
         self.size += 1
 
-    def append_left(self, item):
+    def append_left(self, item) -> None:
+        """
+        Метод вставки ноды в начало списка
+        :param item: вставляемая нода
+        """
         if self.head is None:
             self.append_to_empty_list(item)
             return
@@ -84,9 +112,17 @@ class LinkedList:
         self.size += 1
 
     def append_right(self, item):
+        """
+        Метод вставки ноды в конец списка
+        :param item: вставляемая нода
+        """
         self.append(item)
 
-    def append(self, item):
+    def append(self, item) -> None:
+        """
+        Метод вставки ноды в конец списка
+        :param item: вставляемая нода
+        """
         if self.head is None:
             self.append_to_empty_list(item)
             return
@@ -98,6 +134,11 @@ class LinkedList:
         self.size += 1
 
     def insert(self, previous, item):
+        """
+        Метод вставки ноды после выбранной
+        :param previous: нода, после которой будет вставлена новая
+        :param item: вставляемая нода
+        """
         if not isinstance(previous, LinkedListItem):
             previous = self.find_node(previous)
         new_node = LinkedListItem(item)
@@ -108,7 +149,11 @@ class LinkedList:
         new_node.next_item = nxt
         self.size += 1
 
-    def remove(self, item):
+    def remove(self, item) -> None:
+        """
+        Метод удаления ноды из списка
+        :param item: значение для удаления
+        """
         if not isinstance(item, LinkedListItem):
             item = self.find_node(item)
 
@@ -131,6 +176,11 @@ class LinkedList:
         self.size -= 1
 
     def find_node(self, data: object) -> LinkedListItem:
+        """
+        Метод поиска ноды в списке
+        :param data: передаваемое значение ноды
+        :return: ноду
+        """
         for node in self:
             if node.data == data:
                 return node
@@ -171,27 +221,47 @@ class LinkedList:
             second_item.previous_item.next_item = second_item
 
     def __len__(self) -> int:
+        """
+
+        :return:
+        """
         return self.size
 
     def __iter__(self) -> Iterator:
+        """
+
+        """
         pointer = self.head
         for i in range(self.size):
             yield pointer
             pointer = pointer.next_item
 
     def __contains__(self, item: object) -> bool:
+        """
+
+        :param item:
+        :return:
+        """
         for list_item in self:
             if item in (list_item, list_item.data):
                 return True
         return False
 
     def __reversed__(self) -> Generator:
+        """
+
+        """
         node = self.tail
         for _ in range(self.size):
             yield node.data
             node = node.previous_item
 
     def __getitem__(self, index: int) -> object:
+        """
+        Метод получения элемента из списка по индексу
+        :param index: индекс элемента
+        :return:
+        """
         if index >= self.size or abs(index) > self.size:
             raise IndexError("index out of range")
         if index >= 0:
@@ -205,5 +275,9 @@ class LinkedList:
         return ptr.data
 
     def __str__(self):
+        """
+        Метод представления списка в виде строки
+        :return:
+        """
         return f"{self.__class__.__name__}([{', '.join([str(i) for i in self])}])"
 
