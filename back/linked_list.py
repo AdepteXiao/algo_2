@@ -1,43 +1,44 @@
-from typing import Union, Iterator, Generator
+from typing import Union, Iterator, Generator, Optional
 
 
 class LinkedListItem:
-    def __init__(self, item=None):
+    def __init__(self, item: Optional[object] = None) -> None:
         self.__next = None
         self.__prev = None
         self.data = item
 
     @property
-    def next_item(self):
+    def next_item(self) -> object:
         return self.__next
 
     @next_item.setter
-    def next_item(self, value):
+    def next_item(self, value: object) -> None:
         self.__next = value
-        value.__prev = self
+        value.__prev = self  # pylint: disable=E0401
 
     @property
-    def previous_item(self):
+    def previous_item(self) -> object:
         return self.__prev
 
     @previous_item.setter
-    def previous_item(self, value):
+    def previous_item(self, value: object) -> None:
         self.__prev = value
-        value.__next = self
+        value.__next = self  # pylint: disable=W0238
 
-    def __str__(self):
+    def __str__(self) -> str:
         return str(self.data)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"   prev: {self.previous_item}\n" \
                f"   val: {self.data}\n" \
                f"   next: {self.next_item}"
 
 
 class LinkedList:
-    def __init__(self, head: Union[LinkedListItem, None] = None) -> None:
+    def __init__(self, head: Optional[LinkedListItem] = None) -> None:
         """
-        Конструктор класса, присваивает первому и последнему элементу значение первой и последней ноды списка
+        Конструктор класса, присваивает первому и последнему элементу
+        значение первой и последней ноды списка
         :param head: первая нода списка
         """
         self.__head = head
@@ -54,7 +55,7 @@ class LinkedList:
             self.tail = ptr
 
     @property
-    def head(self) -> Union[LinkedListItem, None]:
+    def head(self) -> Optional[LinkedListItem]:
         """
         Свойство геттер значения первой ноды
         :return: значение первой ноды
@@ -62,7 +63,7 @@ class LinkedList:
         return self.__head
 
     @property
-    def tail(self) -> Union[LinkedListItem, None]:
+    def tail(self) -> Optional[LinkedListItem]:
         """
         Свойство геттер значения последней ноды
         :return: значение последней нода
@@ -70,7 +71,7 @@ class LinkedList:
         return self.__tail
 
     @tail.setter
-    def tail(self, value: Union[LinkedListItem, None]) -> None:
+    def tail(self, value: Optional[LinkedListItem]) -> None:
         """
         Свойство сеттер значения последней ноды
         :param value: нода
@@ -78,14 +79,14 @@ class LinkedList:
         self.__tail = value
 
     @head.setter
-    def head(self, value: Union[LinkedListItem, None]) -> None:
+    def head(self, value: Optional[LinkedListItem]) -> None:
         """
         Свойство сеттер значения первой ноды списка
         :param value: нода
         """
         self.__head = value
 
-    def append_to_empty_list(self, item):
+    def append_to_empty_list(self, item: object) -> None:
         """
         Метод вставки ноды в пустой список
         :param item: вставляемая нода
@@ -97,7 +98,7 @@ class LinkedList:
         new_node.next_item = self.head
         self.size += 1
 
-    def append_left(self, item) -> None:
+    def append_left(self, item: object) -> None:
         """
         Метод вставки ноды в начало списка
         :param item: вставляемая нода
@@ -111,14 +112,14 @@ class LinkedList:
         self.head = new_node
         self.size += 1
 
-    def append_right(self, item):
+    def append_right(self, item: object) -> None:
         """
         Метод вставки ноды в конец списка
         :param item: вставляемая нода
         """
         self.append(item)
 
-    def append(self, item) -> None:
+    def append(self, item: object) -> None:
         """
         Метод вставки ноды в конец списка
         :param item: вставляемая нода
@@ -133,7 +134,8 @@ class LinkedList:
         self.head.previous_item = self.tail
         self.size += 1
 
-    def insert(self, previous, item):
+    def insert(self, previous: Union[LinkedListItem, object],
+               item: object) -> None:
         """
         Метод вставки ноды после выбранной
         :param previous: нода, после которой будет вставлена новая
@@ -186,7 +188,8 @@ class LinkedList:
                 return node
         raise ValueError("data not in list")
 
-    def swap(self, first_item: LinkedListItem, second_item: LinkedListItem) -> None:
+    def swap(self, first_item: LinkedListItem,
+             second_item: LinkedListItem) -> None:
         """
         Метод обмена двух любых нод списка между собой
         :param first_item: первая нода
@@ -232,7 +235,7 @@ class LinkedList:
 
         """
         pointer = self.head
-        for i in range(self.size):
+        for _ in range(self.size):
             yield pointer
             pointer = pointer.next_item
 
@@ -280,4 +283,3 @@ class LinkedList:
         :return:
         """
         return f"{self.__class__.__name__}([{', '.join([str(i) for i in self])}])"
-

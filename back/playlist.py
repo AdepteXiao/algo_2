@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Union, Optional
 
 from back.linked_list import LinkedListItem, LinkedList
 from back.composition import Composition
@@ -11,7 +11,7 @@ list_of_all = [f"{path}\\{track}" for track in os.listdir(path)]
 
 
 class PlaylistItem(LinkedListItem):
-    def __init__(self, composition: Composition):
+    def __init__(self, composition: Composition) -> None:
         """
         Конструктор класса
         :param composition:
@@ -20,7 +20,7 @@ class PlaylistItem(LinkedListItem):
 
 
 class Playlist(LinkedList):
-    def __init__(self, head: Union[PlaylistItem, None], name: Union[str, None]):
+    def __init__(self, head: Optional[PlaylistItem], name: Optional[str]) -> None:
         """
         Конструктор класса
         :param head: первая нода списка
@@ -61,7 +61,7 @@ class Playlist(LinkedList):
         """
         self.__current_track = self.__current_track.next_item
 
-    def previous_track(self):
+    def previous_track(self) -> None:
         """
         получение предыдущего трека
         """
@@ -74,14 +74,14 @@ class Playlist(LinkedList):
         """
         return f'{self.name} - {self.size} треков, длительностью {self.duration}'
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """
         строковое представление плейлиста
         :return: мету плейлиста
         """
         return f'{self.name} - {self.size} треков, длительностью {self.duration}'
 
-    def meta(self):
+    def meta(self) -> str:
         """
         получение меты плейлиста
         :return: выведенная мета
@@ -122,7 +122,7 @@ class Playlist(LinkedList):
         self.duration = duration_from_seconds(sum(map(lambda x: x.data.duration, self)))
 
 
-def create_node_sequence(data):
+def create_node_sequence(data: list) -> Optional[LinkedListItem]:
     """
     Функция создания последовательности нод
     :param data: список нод
@@ -144,7 +144,7 @@ def create_node_sequence(data):
     return head
 
 
-def make_list_of_all():
+def make_list_of_all() -> Playlist:
     """
     Функция создания плэйлиста из всех треков
     :return:
@@ -152,31 +152,13 @@ def make_list_of_all():
     return Playlist(create_node_sequence([Composition(paths) for paths in list_of_all]), "Все треки")
 
 
-def make_empty_playlist(num):
+def make_empty_playlist(num: int) -> Playlist:
     """
     Функция создания пустого плэйлиста
     :param num: номер плэйлиста
     :return: экземпляр класса плейлист
     """
     return Playlist(head=None, name=f"Unnamed playlist No{num}")
-
-
-# def make_random_playlist(pl_count):
-#     """
-#
-#     :param pl_count:
-#     :return:
-#     """
-#     from random import shuffle, randint
-#     from back.database_interaction import Relator
-#
-#     tr_list = get_comp(list_of_all)
-#     pl_len = randint(2, len(tr_list))
-#     res = [tr_list.pop(randint(0, len(tr_list) - 1)) for _ in range(pl_len)]
-#     # res = [tr_list.pop(randint(0, len(tr_list) - 1)) for _ in range(1)]
-#     shuffle(res)
-#
-#     return Playlist(create_node_sequence(res), f"random playlist No {pl_count}")
 
 
 def make_playlist(data: list[Composition], name: str) -> Playlist:
